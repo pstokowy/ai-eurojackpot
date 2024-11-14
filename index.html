@@ -2,71 +2,212 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Symulator EuroJackpot</title>
+    <title>EuroJackpot Matrix</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            margin: 0;
+            overflow: hidden;
+            background: black;
+            font-family: 'Courier New', monospace;
+        }
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .lottery-container {
+            position: relative;
+            z-index: 2;
+            color: #FFD700;
             text-align: center;
+            padding-top: 20vh;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         }
         .numbers {
-            font-size: 24px;
-            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px;
         }
-        .ball {
-            display: inline-block;
+        .number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 50px;
             height: 50px;
             border-radius: 50%;
-            background: #ffd700;
-            line-height: 50px;
-            margin: 5px;
+            font-size: 1.5em;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            opacity: 0;
         }
-        .euro-ball {
-            background: #4CAF50;
-            color: white;
+        .number.rolling-in {
+            animation: rollIn 2s ease-out forwards;
+        }
+        .number.rolling-out {
+            animation: rollOut 2s ease-in forwards;
+        }
+        .main-number {
+            background: white;
+            color: black;
+        }
+        .extra-number {
+            background: #FFD700;
+            color: black;
+        }
+        .rolling-in.main-number {
+            animation-delay: calc(var(--index) * 0.2s);
+        }
+        .rolling-in.extra-number {
+            animation-delay: calc((var(--index) + 5) * 0.2s);
         }
         button {
-            font-size: 18px;
-            padding: 10px 20px;
-            cursor: pointer;
-            background: #4CAF50;
-            color: white;
+            background: #FFD700;
+            color: black;
             border: none;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
             border-radius: 5px;
+            box-shadow: 0 0 10px #FFD700;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+        button:hover {
+            background: #FFC107;
+            box-shadow: 0 0 20px #FFC107;
+        }
+        @keyframes rollIn {
+            0% {
+                transform: translateX(-1000px) rotate(-720deg);
+                opacity: 0;
+            }
+            100% {
+                transform: translateX(0) rotate(0deg);
+                opacity: 1;
+            }
+        }
+        @keyframes rollOut {
+            0% {
+                transform: translateX(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(1000px) rotate(720deg);
+                opacity: 0;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Symulator EuroJackpot</h1>
-    <button onclick="losuj()">Losuj liczby</button>
-    <div class="numbers" id="wynik"></div>
-
+    <canvas id="matrix"></canvas>
+    <div class="lottery-container">
+        <h1>EuroJackpot Matrix</h1>
+        <div class="numbers" id="mainNumbers"></div>
+        <div class="numbers" id="extraNumbers"></div>
+        <button onclick="losujLiczby()">LOSUJ</button>
+    </div>
     <script>
-        const losujLiczby = (min, max, count) => {
-            const liczby = new Set();
-            while (liczby.size < count) {
-                liczby.add(Math.floor(Math.random() * (max - min + 1)) + min);
+        // Efekt Matrixa
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
+        const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const nums = '0123456789';
+        const alphabet = katakana + latin + nums;
+
+        const fontSize = 16;
+        const columns = canvas.width/fontSize;
+
+        const rainDrops = Array(Math.floor(columns)).fill(1);
+
+        let matrixColor = '#0F0';
+
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = matrixColor;
+            ctx.font = fontSize + 'px monospace';
+
+            for(let i = 0; i < rainDrops.length; i++) {
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                ctx.fillText(text, i*fontSize, rainDrops[i]*fontSize);
+                
+                if(rainDrops[i]*fontSize > canvas.height && Math.random() > 0.975){
+                    rainDrops[i] = 0;
+                }
+                rainDrops[i]++;
             }
-            return Array.from(liczby).sort((a, b) => a - b);
-        };
+        }
 
-        const losuj = () => {
-            const glowneLiczby = losujLiczby(1, 50, 5);
-            const euroLiczby = losujLiczby(1, 12, 2);
+        function losujLiczby() {
+            // Animacja wyjścia dla istniejących liczb
+            const existingNumbers = document.querySelectorAll('.number');
+            existingNumbers.forEach(num => {
+                num.classList.add('rolling-out');
+                num.classList.remove('rolling-in');
+            });
 
-            const wynik = document.getElementById('wynik');
-            wynik.innerHTML = glowneLiczby
-                .map(n => `<span class="ball">${n}</span>`)
-                .join('') + 
-                ' + ' +
-                euroLiczby
-                    .map(n => `<span class="ball euro-ball">${n}</span>`)
-                    .join('');
-        };
+            // Czekamy na zakończenie animacji wyjścia
+            setTimeout(() => {
+                // Losowanie 5 liczb z 50
+                const mainNumbers = new Set();
+                while(mainNumbers.size < 5) {
+                    mainNumbers.add(Math.floor(Math.random() * 50) + 1);
+                }
+                
+                // Losowanie 2 liczb z 12
+                const extraNumbers = new Set();
+                while(extraNumbers.size < 2) {
+                    extraNumbers.add(Math.floor(Math.random() * 12) + 1);
+                }
+
+                // Wyświetlanie wyników z indeksami dla animacji
+                const mainNumbersContainer = document.getElementById('mainNumbers');
+                mainNumbersContainer.innerHTML = '';
+                [...mainNumbers].forEach((num, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'number main-number';
+                    div.style.setProperty('--index', index);
+                    div.textContent = num;
+                    // Dodajemy klasę rolling-in w następnym frame
+                    requestAnimationFrame(() => {
+                        div.classList.add('rolling-in');
+                    });
+                    mainNumbersContainer.appendChild(div);
+                });
+
+                const extraNumbersContainer = document.getElementById('extraNumbers');
+                extraNumbersContainer.innerHTML = '';
+                [...extraNumbers].forEach((num, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'number extra-number';
+                    div.style.setProperty('--index', index);
+                    div.textContent = num;
+                    // Dodajemy klasę rolling-in w następnym frame
+                    requestAnimationFrame(() => {
+                        div.classList.add('rolling-in');
+                    });
+                    extraNumbersContainer.appendChild(div);
+                });
+
+                // Zmiana koloru na biało i żółto
+                matrixColor = '#FFF';
+                setTimeout(() => {
+                    matrixColor = '#FFD700';
+                    setTimeout(() => {
+                        matrixColor = '#0F0';
+                    }, 200);
+                }, 200);
+            }, 2000);
+        }
+
+        setInterval(draw, 50);
     </script>
 </body>
 </html>
