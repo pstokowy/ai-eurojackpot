@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symulator EuroJackpot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .numbers {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        .ball {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #ffd700;
+            line-height: 50px;
+            margin: 5px;
+        }
+        .euro-ball {
+            background: #4CAF50;
+            color: white;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Symulator EuroJackpot</h1>
+    <button onclick="losuj()">Losuj liczby</button>
+    <div class="numbers" id="wynik"></div>
+
+    <script>
+        const losujLiczby = (min, max, count) => {
+            const liczby = new Set();
+            while (liczby.size < count) {
+                liczby.add(Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+            return Array.from(liczby).sort((a, b) => a - b);
+        };
+
+        const losuj = () => {
+            const glowneLiczby = losujLiczby(1, 50, 5);
+            const euroLiczby = losujLiczby(1, 12, 2);
+
+            const wynik = document.getElementById('wynik');
+            wynik.innerHTML = glowneLiczby
+                .map(n => `<span class="ball">${n}</span>`)
+                .join('') + 
+                ' + ' +
+                euroLiczby
+                    .map(n => `<span class="ball euro-ball">${n}</span>`)
+                    .join('');
+        };
+    </script>
+</body>
+</html>
